@@ -1,0 +1,8 @@
+version: '3.9'
+
+# services:
+  # settlement-service: # todo
+
+networks:
+  bank-net:
+    external: true

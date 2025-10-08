@@ -1,0 +1,9 @@
+version: '3.9'
+
+networks:
+  bank-net:
+    name: bank-net
+    driver: bridge
+
+# Root compose only defines shared infra
+# Each service compose file will be combined when running

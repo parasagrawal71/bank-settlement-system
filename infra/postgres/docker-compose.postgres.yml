@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  accounts-postgres:
+    image: postgres:15
+    container_name: accounts-postgres
+    environment:
+      POSTGRES_USER: ${ACCOUNTS_DB_USER}
+      POSTGRES_PASSWORD: ${ACCOUNTS_DB_PASSWORD}
+      POSTGRES_DB: ${ACCOUNTS_DB_NAME}
+    ports:
+      - "5433:${ACCOUNTS_DB_PORT}"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    networks:
+      - bank-net
+
+  payments-postgres:
+    image: postgres:15
+    container_name: payments-postgres
+    environment:
+      POSTGRES_USER: ${PAYMENTS_DB_USER}
+      POSTGRES_PASSWORD: ${PAYMENTS_DB_PASSWORD}
+      POSTGRES_DB: ${PAYMENTS_DB_NAME}
+    ports:
+      - "5434:${PAYMENTS_DB_PORT}"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    networks:
+      - bank-net
+
+  settlement-postgres:
+    image: postgres:15
+    container_name: settlement-postgres
+    environment:
+      POSTGRES_USER: ${SETTLEMENT_DB_USER}
+      POSTGRES_PASSWORD: ${SETTLEMENT_DB_PASSWORD}
+      POSTGRES_DB: ${SETTLEMENT_DB_NAME}
+    ports:
+      - "5435:${SETTLEMENT_DB_PORT}"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    networks:
+      - bank-net
+
+networks:
+  bank-net:
+    external: true
