@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package accounts;
+option go_package = "./proto";
+
+service AccountService {
+  rpc GetAccount(GetAccountRequest) returns (AccountResponse);
+  rpc UpdateBalance(UpdateBalanceRequest) returns (AccountResponse);
+}
+
+message GetAccountRequest {
+  string account_id = 1;
+}
+
+message AccountResponse {
+    string account_id = 1;
+    string name = 2;
+    string bank_id = 3;
+    double balance = 4;
+}
+
+message UpdateBalanceRequest {
+    string account_id = 1;
+    double amount = 2;
+    bool is_credit = 3;
+}
+
+
