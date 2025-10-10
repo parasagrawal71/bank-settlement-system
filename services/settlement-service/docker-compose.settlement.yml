@@ -1,7 +1,18 @@
 version: '3.9'
 
-# services:
-  # settlement-service: # todo
+services:
+  settlement-service:
+    build: services/settlement-service/.
+    container_name: settlement-service
+    env_file:
+      - .env
+    depends_on:
+      settlement-postgres:
+        condition: service_healthy
+    ports:
+      - "${SETTLEMENT_GRPC_PORT}:${SETTLEMENT_GRPC_PORT}"
+    networks:
+      - bank-net
 
 networks:
   bank-net:

@@ -1,7 +1,18 @@
 version: "3.9"
 
-# services:
-  # accounts-service: # todo
+services:
+  accounts-service:
+    build: services/accounts-service/.
+    container_name: accounts-service
+    env_file:
+      - .env
+    depends_on:
+      accounts-postgres:
+        condition: service_healthy
+    ports:
+      - "${ACCOUNTS_GRPC_PORT}:${ACCOUNTS_GRPC_PORT}"
+    networks:
+      - bank-net
 
 networks:
   bank-net:

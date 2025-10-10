@@ -1,7 +1,18 @@
 version: '3.9'
 
-# services:
-  # payments-service: # todo
+services:
+  payments-service:
+    build: services/payments-service/.
+    container_name: payments-service
+    env_file:
+      - .env
+    depends_on:
+      payments-postgres:
+        condition: service_healthy
+    ports:
+      - "${PAYMENTS_GRPC_PORT}:${PAYMENTS_GRPC_PORT}"
+    networks:
+      - bank-net
 
 networks:
   bank-net:
