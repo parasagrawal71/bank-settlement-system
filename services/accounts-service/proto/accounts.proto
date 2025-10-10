@@ -1,0 +1,40 @@
+syntax = "proto3";
+package accounts;
+// option go_package = "github.com/parasagrawal71/bank-settlement-system/services/accounts-service/proto";
+option go_package = "./proto";
+
+service AccountService {
+    rpc CreateAccount (CreateAccountRequest) returns (AccountResponse);
+    rpc GetAccount (GetAccountRequest) returns (AccountResponse);
+    rpc UpdateBalance (UpdateBalanceRequest) returns (AccountResponse);
+    rpc ListAccounts (ListAccountsRequest) returns (ListAccountsResponse);
+}
+
+message CreateAccountRequest {
+    string name = 1;
+    string bank_id = 2;
+    double initial_balance = 3;
+}
+
+message GetAccountRequest {
+    string account_id = 1;
+}
+
+message UpdateBalanceRequest {
+    string account_id = 1;
+    double amount = 2;
+    bool is_credit = 3;
+}
+
+message AccountResponse {
+    string account_id = 1;
+    string name = 2;
+    string bank_id = 3;
+    double balance = 4;
+}
+
+message ListAccountsRequest {}
+
+message ListAccountsResponse {
+    repeated AccountResponse accounts = 1;
+}

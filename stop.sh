@@ -5,4 +5,5 @@ docker compose \
   -f services/accounts-service/docker-compose.accounts.yml \
   -f services/payments-service/docker-compose.payments.yml \
   -f services/settlement-service/docker-compose.settlement.yml \
-  down
+  down -v
+  # -v will remove volumes

@@ -12,6 +12,7 @@ services:
       - "5433:${ACCOUNTS_DB_PORT}"
     volumes:
       - ./data/accounts:/var/lib/postgresql/data
+      - ./infra/initdb/accounts.schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro # For local dev
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${ACCOUNTS_DB_USER}"]
       interval: 5s
@@ -31,6 +32,7 @@ services:
       - "5434:${PAYMENTS_DB_PORT}"
     volumes:
       - ./data/payments:/var/lib/postgresql/data
+      # - ./infra/initdb/payments.schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro # For local dev
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${PAYMENTS_DB_USER}"]
       interval: 5s
@@ -50,6 +52,7 @@ services:
       - "5435:${SETTLEMENT_DB_PORT}"
     volumes:
       - ./data/settlement:/var/lib/postgresql/data
+      # - ./infra/initdb/settlement.schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro # For local dev
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${SETTLEMENT_DB_USER}"]
       interval: 5s
