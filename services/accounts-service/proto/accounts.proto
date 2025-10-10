@@ -1,6 +1,5 @@
 syntax = "proto3";
 package accounts;
-// option go_package = "github.com/parasagrawal71/bank-settlement-system/services/accounts-service/proto";
 option go_package = "./proto";
 
 service AccountService {

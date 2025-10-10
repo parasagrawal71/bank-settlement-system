@@ -8,6 +8,7 @@
 # For standard Go protobuf: go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36
 # For gRPC in Go: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3
 protoc --go_out=services/accounts-service/. --go-grpc_out=services/accounts-service/. services/accounts-service/proto/accounts.proto
+protoc --go_out=services/payments-service/. --go-grpc_out=services/payments-service/. services/payments-service/proto/payments.proto
 
 
 docker compose \

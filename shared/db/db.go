@@ -30,5 +30,7 @@ func InitDB(dbUrl string) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("ping db: %w", err)
 	}
 
+	log.Println("✅ Connected to the database")
+
 	return pool, nil
 }
