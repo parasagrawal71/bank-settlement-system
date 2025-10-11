@@ -33,7 +33,7 @@ func main() {
 	}
 	grpcServer := grpc.NewServer()
 	pb.RegisterPaymentServiceServer(grpcServer,
-		handler.NewPaymentHandler()) // if require, pass 'pool' here
+		handler.NewPaymentHandler(pool))
 
 	// enable reflection
 	reflection.Register(grpcServer)

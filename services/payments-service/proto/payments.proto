@@ -1,10 +1,16 @@
 syntax = "proto3";
 
 package payments;
+
 option go_package = "./proto";
 
 service PaymentService {
   rpc CreatePayment (PaymentRequest) returns (PaymentResponse);
+}
+
+enum TransactionType {
+  DEBIT = 0;
+  CREDIT = 1;
 }
 
 message PaymentRequest {
@@ -15,7 +21,9 @@ message PaymentRequest {
 }
 
 message PaymentResponse {
-  string payment_id = 1;
+  string reference_id = 1;
   string status = 2;
   string message = 3;
 }
+
+
