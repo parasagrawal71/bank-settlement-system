@@ -28,6 +28,17 @@ services:
     networks:
       - bank-net
 
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    container_name: kafdrop
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:9092"   # Kafka container name
+      JVM_OPTS: "-Xms32M -Xmx64M"
+    networks:
+      - bank-net
+
 networks:
   bank-net:
     external: true

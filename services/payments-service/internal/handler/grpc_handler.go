@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/parasagrawal71/bank-settlement-system/services/payments-service/internal/events"
 	"github.com/parasagrawal71/bank-settlement-system/services/payments-service/internal/repository"
 	pb "github.com/parasagrawal71/bank-settlement-system/services/payments-service/proto"
 	"google.golang.org/grpc"
@@ -17,6 +18,7 @@ type PaymentHandler struct {
 	pb.UnimplementedPaymentServiceServer
 	repo           *repository.Repository
 	accountsClient pb.AccountServiceClient
+	outboxRepo     *repository.OutboxRepository
 }
 
 func NewPaymentHandler(pool *pgxpool.Pool) *PaymentHandler {
@@ -27,7 +29,7 @@ func NewPaymentHandler(pool *pgxpool.Pool) *PaymentHandler {
 	}
 
 	client := pb.NewAccountServiceClient(conn)
-	return &PaymentHandler{repo: repository.NewRepository(pool), accountsClient: client}
+	return &PaymentHandler{repo: repository.NewRepository(pool), accountsClient: client, outboxRepo: repository.NewOutboxRepository(pool)}
 }
 
 func (h *PaymentHandler) CreatePayment(ctx context.Context, req *pb.PaymentRequest) (*pb.PaymentResponse, error) {
@@ -91,6 +93,31 @@ func (h *PaymentHandler) CreatePayment(ctx context.Context, req *pb.PaymentReque
 
 	if err := h.repo.InsertTransaction(ctx, tx, req.PayeeId, req.Currency, "CREDIT", refID, req.Amount); err != nil {
 		return nil, fmt.Errorf("insert credit: %w", err)
+	}
+
+	now := time.Now().Unix()
+	debitEv := events.PaymentEvent{
+		ReferenceID: refID,
+		AccountID:   req.PayerId,
+		Amount:      req.Amount,
+		Currency:    req.Currency,
+		TxnType:     "DEBIT",
+		Timestamp:   now,
+	}
+	creditEv := events.PaymentEvent{
+		ReferenceID: refID,
+		AccountID:   req.PayeeId,
+		Amount:      req.Amount,
+		Currency:    req.Currency,
+		TxnType:     "CREDIT",
+		Timestamp:   now,
+	}
+
+	if err := h.outboxRepo.AddEvent(ctx, tx, "DEBIT_PAYMENT", debitEv); err != nil {
+		return nil, fmt.Errorf("store debit outbox: %w", err)
+	}
+	if err := h.outboxRepo.AddEvent(ctx, tx, "CREDIT_PAYMENT", creditEv); err != nil {
+		return nil, fmt.Errorf("store credit outbox: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {

@@ -12,3 +12,14 @@ CREATE TABLE IF NOT EXISTS transactions (
 -- Create a unique index on (reference_id, txn_type)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_reference_txn_type
     ON payments (reference_id, txn_type);
+
+
+CREATE TABLE IF NOT EXISTS outbox_events (
+    id SERIAL PRIMARY KEY,
+    event_type VARCHAR(50) NOT NULL,
+    payload JSONB NOT NULL,
+    status VARCHAR(20) DEFAULT 'PENDING',
+    retry_count INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
