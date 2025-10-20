@@ -57,7 +57,7 @@ sequenceDiagram
 <br />
 
 ## Key Non-Functional Features
-- Built with **Golang**
+- Built with **Golang** and **Postgresql**
 - **gRPC** used for inter-service communication.
 - **Outbox Pattern**–based event-driven communication over **Kafka**, enabling guaranteed asynchronous updates.
 - **Idempotency** keys ensure repeat requests (like retries) do not duplicate transactions.
