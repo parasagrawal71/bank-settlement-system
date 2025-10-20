@@ -9,6 +9,7 @@
 # For gRPC in Go: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3
 protoc --go_out=services/accounts-service/. --go-grpc_out=services/accounts-service/. services/accounts-service/proto/accounts.proto
 protoc --go_out=services/payments-service/. --go-grpc_out=services/payments-service/. services/payments-service/proto/payments.proto services/payments-service/proto/accounts.proto
+protoc --go_out=services/settlement-service/. --go-grpc_out=services/settlement-service/. services/settlement-service/proto/settlement.proto
 
 
 docker compose \

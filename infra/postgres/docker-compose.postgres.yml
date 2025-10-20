@@ -52,7 +52,7 @@ services:
       - "5435:${SETTLEMENT_DB_PORT}"
     volumes:
       - ./data/settlement:/var/lib/postgresql/data
-      # - ./infra/initdb/settlement.schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro # For local dev
+      - ./infra/initdb/settlement.schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro # For local dev
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${SETTLEMENT_DB_USER}"]
       interval: 5s

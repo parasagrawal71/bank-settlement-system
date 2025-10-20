@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package settlement;
+
+option go_package = "./proto";
+
+service SettlementService {
+  rpc GetSettlementStatus(SettlementStatusRequest) returns (SettlementStatusResponse);
+}
+
+message SettlementStatusRequest {
+  string reference_id = 1;
+}
+
+message SettlementStatusResponse {
+  string reference_id = 1;
+  string status = 2;
+}
+
+

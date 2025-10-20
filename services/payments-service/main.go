@@ -47,7 +47,6 @@ func main() {
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("grpc serve: %v", err)
 		}
-
 	}()
 
 	// a simple background goroutine polling every 5s.
