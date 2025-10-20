@@ -61,6 +61,7 @@ sequenceDiagram
 - **gRPC** used for inter-service communication.
 - **Outbox Pattern**–based event-driven communication over **Kafka**, enabling guaranteed asynchronous updates.
 - **Idempotency** keys ensure repeat requests (like retries) do not duplicate transactions.
+- Used **Database transactions** to ensure atomicity and consistency of financial operations.
 - Compatible with container orchestration (**Dockerized** microservices).
 
 <br />
@@ -92,4 +93,31 @@ bank-settlement-system/
 │
 └── shared/
     └── db/
+```
+
+<br />
+
+## API Usage Examples
+
+Create accounts
+```bash
+grpcurl -plaintext -d '{"name":"Paras Agrawal","account_no":"10023","initial_balance":2000.50}' localhost:50051 accounts.AccountService/CreateAccount
+grpcurl -plaintext -d '{"name":"Alice","account_no":"20012","initial_balance":1000}' localhost:50051 accounts.AccountService/CreateAccount
+```
+
+List accounts
+```bash
+grpcurl -plaintext -d '{}' localhost:50051 accounts.AccountService/ListAccounts
+```
+
+Create Payment Intent
+
+```bash
+grpcurl -plaintext -d '{"payer_id":"<payer_account_uuid>","payee_id":"<payee_account_uuid>","amount":100}' localhost:50052 payments.PaymentService/CreatePaymentIntent
+```
+
+Capture Payment
+
+```bash
+grpcurl -plaintext -d '{"reference_id": "<reference_id_from_response>"}' localhost:50052 payments.PaymentService/CapturePayment
 ```
