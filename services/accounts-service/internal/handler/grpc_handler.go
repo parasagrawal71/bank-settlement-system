@@ -18,18 +18,26 @@ func NewAccountHandler(pool *pgxpool.Pool) *AccountHandler {
 	return &AccountHandler{repo: repository.NewRepository(pool)}
 }
 
+// CreateAccount creates a new account with the given name, account_no and initial balance.
 func (h *AccountHandler) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.AccountResponse, error) {
-	if req.Name == "" || req.BankId == "" {
-		return nil, fmt.Errorf("name and bank_id required")
+	if req.Name == "" || req.AccountNo == "" {
+		return nil, fmt.Errorf("name and account_id required")
 	}
-	acct, err := h.repo.CreateAccount(ctx, req.Name, req.BankId,
+	acct, err := h.repo.CreateAccount(ctx, req.Name, req.AccountNo,
 		req.InitialBalance)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.AccountResponse{AccountId: acct.ID, Name: acct.Name, BankId: acct.BankID, Balance: acct.Balance}, nil
+	return &pb.AccountResponse{
+		AccountId: acct.ID,
+		Name:      acct.Name,
+		AccountNo: acct.AccountNo,
+		Balance:   acct.Balance,
+		Reserved:  acct.Reserved,
+	}, nil
 }
 
+// GetAccount fetches an account given its account_id.
 func (h *AccountHandler) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb.AccountResponse, error) {
 	if req.AccountId == "" {
 		return nil, fmt.Errorf("account_id required")
@@ -41,9 +49,16 @@ func (h *AccountHandler) GetAccount(ctx context.Context, req *pb.GetAccountReque
 	if acct == nil {
 		return nil, fmt.Errorf("account not found")
 	}
-	return &pb.AccountResponse{AccountId: acct.ID, Name: acct.Name, BankId: acct.BankID, Balance: acct.Balance}, nil
+	return &pb.AccountResponse{
+		AccountId: acct.ID,
+		Name:      acct.Name,
+		AccountNo: acct.AccountNo,
+		Balance:   acct.Balance,
+		Reserved:  acct.Reserved,
+	}, nil
 }
 
+// UpdateBalance updates the balance of an account given its account_id, amount and is_credit flag.
 func (h *AccountHandler) UpdateBalance(ctx context.Context, req *pb.UpdateBalanceRequest) (*pb.AccountResponse, error) {
 	if req.AccountId == "" {
 		return nil, fmt.Errorf("account_id required")
@@ -53,9 +68,16 @@ func (h *AccountHandler) UpdateBalance(ctx context.Context, req *pb.UpdateBalanc
 	if err != nil {
 		return nil, err
 	}
-	return &pb.AccountResponse{AccountId: acct.ID, Name: acct.Name, BankId: acct.BankID, Balance: acct.Balance}, nil
+	return &pb.AccountResponse{
+		AccountId: acct.ID,
+		Name:      acct.Name,
+		AccountNo: acct.AccountNo,
+		Balance:   acct.Balance,
+		Reserved:  acct.Reserved,
+	}, nil
 }
 
+// ListAccounts returns a list of accounts.
 func (h *AccountHandler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest) (*pb.ListAccountsResponse, error) {
 	list, err := h.repo.ListAccounts(ctx)
 	if err != nil {
@@ -63,7 +85,13 @@ func (h *AccountHandler) ListAccounts(ctx context.Context, req *pb.ListAccountsR
 	}
 	resp := &pb.ListAccountsResponse{}
 	for _, a := range list {
-		resp.Accounts = append(resp.Accounts, &pb.AccountResponse{AccountId: a.ID, Name: a.Name, BankId: a.BankID, Balance: a.Balance})
+		resp.Accounts = append(resp.Accounts, &pb.AccountResponse{
+			AccountId: a.ID,
+			Name:      a.Name,
+			AccountNo: a.AccountNo,
+			Balance:   a.Balance,
+			Reserved:  a.Reserved,
+		})
 	}
 	return resp, nil
 }

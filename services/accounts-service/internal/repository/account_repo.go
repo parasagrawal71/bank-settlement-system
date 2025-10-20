@@ -13,9 +13,11 @@ import (
 type Account struct {
 	ID        string
 	Name      string
-	BankID    string
+	AccountNo string
 	Balance   float64
+	Reserved  float64
 	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Repository struct {
@@ -26,26 +28,36 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{pool: pool}
 }
 
-func (r *Repository) CreateAccount(ctx context.Context, name, bankID string,
+func (r *Repository) CreateAccount(ctx context.Context, name, accountNo string,
 	initialBalance float64) (*Account, error) {
 	var id string
+	var reserved float64
 	var created time.Time
+	var updated time.Time
 	sql :=
-		`INSERT INTO accounts (name, bank_id, balance) VALUES ($1, $2, $3) RETURNING
-id, created_at`
-	row := r.pool.QueryRow(ctx, sql, name, bankID, initialBalance)
-	if err := row.Scan(&id, &created); err != nil {
+		`INSERT INTO accounts (name, account_no, balance) VALUES ($1, $2, $3) RETURNING
+id, reserved, created_at, updated_at`
+	row := r.pool.QueryRow(ctx, sql, name, accountNo, initialBalance)
+	if err := row.Scan(&id, &reserved, &created, &updated); err != nil {
 		return nil, fmt.Errorf("insert account: %w", err)
 	}
-	return &Account{ID: id, Name: name, BankID: bankID, Balance: initialBalance, CreatedAt: created}, nil
+	return &Account{
+		ID:        id,
+		Name:      name,
+		AccountNo: accountNo,
+		Balance:   initialBalance,
+		Reserved:  reserved,
+		CreatedAt: created,
+		UpdatedAt: updated,
+	}, nil
 }
 
-func (r *Repository) GetAccount(ctx context.Context, accountID string) (*Account, error) {
+func (r *Repository) GetAccount(ctx context.Context, id string) (*Account, error) {
 	sql :=
-		`SELECT id, name, bank_id, balance, created_at FROM accounts WHERE id = $1`
-	row := r.pool.QueryRow(ctx, sql, accountID)
+		`SELECT id, name, account_no, balance, reserved, created_at, updated_at FROM accounts WHERE id = $1`
+	row := r.pool.QueryRow(ctx, sql, id)
 	var a Account
-	if err := row.Scan(&a.ID, &a.Name, &a.BankID, &a.Balance, &a.CreatedAt); err != nil {
+	if err := row.Scan(&a.ID, &a.Name, &a.AccountNo, &a.Balance, &a.Reserved, &a.CreatedAt, &a.UpdatedAt); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
@@ -55,7 +67,7 @@ func (r *Repository) GetAccount(ctx context.Context, accountID string) (*Account
 }
 
 // UpdateBalance performs a debit or credit atomically using SELECT FOR UPDATE semantics
-func (r *Repository) UpdateBalance(ctx context.Context, accountID string,
+func (r *Repository) UpdateBalance(ctx context.Context, id string,
 	amount float64, isCredit bool) (*Account, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
@@ -70,7 +82,7 @@ func (r *Repository) UpdateBalance(ctx context.Context, accountID string,
 	// Lock row
 	var curBalance float64
 	q := `SELECT balance FROM accounts WHERE id = $1 FOR UPDATE`
-	row := tx.QueryRow(ctx, q, accountID)
+	row := tx.QueryRow(ctx, q, id)
 	if err := row.Scan(&curBalance); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("account not found")
@@ -87,7 +99,7 @@ func (r *Repository) UpdateBalance(ctx context.Context, accountID string,
 		newBal = curBalance - amount
 	}
 	updateQ := `UPDATE accounts SET balance = $1 WHERE id = $2`
-	if _, err := tx.Exec(ctx, updateQ, newBal, accountID); err != nil {
+	if _, err := tx.Exec(ctx, updateQ, newBal, id); err != nil {
 		return nil, fmt.Errorf("update balance: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -96,12 +108,12 @@ func (r *Repository) UpdateBalance(ctx context.Context, accountID string,
 	// nil tx prevents deferred rollback
 	tx = nil
 	// return updated account
-	return r.GetAccount(ctx, accountID)
+	return r.GetAccount(ctx, id)
 }
 
 func (r *Repository) ListAccounts(ctx context.Context) ([]*Account, error) {
 	sql :=
-		`SELECT id, name, bank_id, balance, created_at FROM accounts ORDER BY
+		`SELECT id, name, account_no, balance, reserved, created_at, updated_at FROM accounts ORDER BY
 created_at DESC LIMIT 1000`
 	rows, err := r.pool.Query(ctx, sql)
 	if err != nil {
@@ -111,8 +123,8 @@ created_at DESC LIMIT 1000`
 	res := make([]*Account, 0)
 	for rows.Next() {
 		var a Account
-		if err := rows.Scan(&a.ID, &a.Name, &a.BankID, &a.Balance,
-			&a.CreatedAt); err != nil {
+		if err := rows.Scan(&a.ID, &a.Name, &a.AccountNo, &a.Balance, &a.Reserved,
+			&a.CreatedAt, &a.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("scan row: %w", err)
 		}
 		res = append(res, &a)

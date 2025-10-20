@@ -24,7 +24,7 @@ const (
 type CreateAccountRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Name           string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	BankId         string                 `protobuf:"bytes,2,opt,name=bank_id,json=bankId,proto3" json:"bank_id,omitempty"`
+	AccountNo      string                 `protobuf:"bytes,2,opt,name=account_no,json=accountNo,proto3" json:"account_no,omitempty"`
 	InitialBalance float64                `protobuf:"fixed64,3,opt,name=initial_balance,json=initialBalance,proto3" json:"initial_balance,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -67,9 +67,9 @@ func (x *CreateAccountRequest) GetName() string {
 	return ""
 }
 
-func (x *CreateAccountRequest) GetBankId() string {
+func (x *CreateAccountRequest) GetAccountNo() string {
 	if x != nil {
-		return x.BankId
+		return x.AccountNo
 	}
 	return ""
 }
@@ -189,8 +189,9 @@ type AccountResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AccountId     string                 `protobuf:"bytes,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	BankId        string                 `protobuf:"bytes,3,opt,name=bank_id,json=bankId,proto3" json:"bank_id,omitempty"`
+	AccountNo     string                 `protobuf:"bytes,3,opt,name=account_no,json=accountNo,proto3" json:"account_no,omitempty"`
 	Balance       float64                `protobuf:"fixed64,4,opt,name=balance,proto3" json:"balance,omitempty"`
+	Reserved      float64                `protobuf:"fixed64,5,opt,name=reserved,proto3" json:"reserved,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -239,9 +240,9 @@ func (x *AccountResponse) GetName() string {
 	return ""
 }
 
-func (x *AccountResponse) GetBankId() string {
+func (x *AccountResponse) GetAccountNo() string {
 	if x != nil {
-		return x.BankId
+		return x.AccountNo
 	}
 	return ""
 }
@@ -249,6 +250,13 @@ func (x *AccountResponse) GetBankId() string {
 func (x *AccountResponse) GetBalance() float64 {
 	if x != nil {
 		return x.Balance
+	}
+	return 0
+}
+
+func (x *AccountResponse) GetReserved() float64 {
+	if x != nil {
+		return x.Reserved
 	}
 	return 0
 }
@@ -337,10 +345,11 @@ var File_services_accounts_service_proto_accounts_proto protoreflect.FileDescrip
 
 const file_services_accounts_service_proto_accounts_proto_rawDesc = "" +
 	"\n" +
-	".services/accounts-service/proto/accounts.proto\x12\baccounts\"l\n" +
+	".services/accounts-service/proto/accounts.proto\x12\baccounts\"r\n" +
 	"\x14CreateAccountRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x17\n" +
-	"\abank_id\x18\x02 \x01(\tR\x06bankId\x12'\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"account_no\x18\x02 \x01(\tR\taccountNo\x12'\n" +
 	"\x0finitial_balance\x18\x03 \x01(\x01R\x0einitialBalance\"2\n" +
 	"\x11GetAccountRequest\x12\x1d\n" +
 	"\n" +
@@ -349,13 +358,15 @@ const file_services_accounts_service_proto_accounts_proto_rawDesc = "" +
 	"\n" +
 	"account_id\x18\x01 \x01(\tR\taccountId\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\x01R\x06amount\x12\x1b\n" +
-	"\tis_credit\x18\x03 \x01(\bR\bisCredit\"w\n" +
+	"\tis_credit\x18\x03 \x01(\bR\bisCredit\"\x99\x01\n" +
 	"\x0fAccountResponse\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\tR\taccountId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x17\n" +
-	"\abank_id\x18\x03 \x01(\tR\x06bankId\x12\x18\n" +
-	"\abalance\x18\x04 \x01(\x01R\abalance\"\x15\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"account_no\x18\x03 \x01(\tR\taccountNo\x12\x18\n" +
+	"\abalance\x18\x04 \x01(\x01R\abalance\x12\x1a\n" +
+	"\breserved\x18\x05 \x01(\x01R\breserved\"\x15\n" +
 	"\x13ListAccountsRequest\"M\n" +
 	"\x14ListAccountsResponse\x125\n" +
 	"\baccounts\x18\x01 \x03(\v2\x19.accounts.AccountResponseR\baccounts2\xbd\x02\n" +
