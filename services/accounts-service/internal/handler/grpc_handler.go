@@ -95,3 +95,48 @@ func (h *AccountHandler) ListAccounts(ctx context.Context, req *pb.ListAccountsR
 	}
 	return resp, nil
 }
+
+// Reserve funds temporarily for a transfer
+func (h *AccountHandler) ReserveFunds(ctx context.Context, req *pb.ReserveRequest) (*pb.ReserveResponse, error) {
+	err := h.repo.ReserveFunds(ctx, req.ReferenceId, req.PayerId, req.PayeeId, req.Amount)
+	if err != nil {
+		return &pb.ReserveResponse{
+			Status:  "FAILED",
+			Message: fmt.Sprintf("reservation failed: %v", err),
+		}, nil
+	}
+	return &pb.ReserveResponse{
+		Status:  "SUCCESS",
+		Message: "funds reserved successfully",
+	}, nil
+}
+
+// Transfer funds from one account to another
+func (h *AccountHandler) Transfer(ctx context.Context, req *pb.TransferRequest) (*pb.TransferResponse, error) {
+	err := h.repo.Transfer(ctx, req.ReferenceId)
+	if err != nil {
+		return &pb.TransferResponse{
+			Status:  "FAILED",
+			Message: fmt.Sprintf("transfer failed: %v", err),
+		}, nil
+	}
+	return &pb.TransferResponse{
+		Status:  "SUCCESS",
+		Message: "transfer successful",
+	}, nil
+}
+
+// Release funds in case of error
+func (h *AccountHandler) ReleaseFunds(ctx context.Context, req *pb.ReleaseRequest) (*pb.ReleaseResponse, error) {
+	err := h.repo.ReleaseFunds(ctx, req.ReferenceId)
+	if err != nil {
+		return &pb.ReleaseResponse{
+			Status:  "FAILED",
+			Message: fmt.Sprintf("release failed: %v", err),
+		}, nil
+	}
+	return &pb.ReleaseResponse{
+		Status:  "SUCCESS",
+		Message: "release successful",
+	}, nil
+}

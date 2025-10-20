@@ -8,8 +8,9 @@ service AccountService {
     rpc GetAccount (GetAccountRequest) returns (AccountResponse);
     rpc UpdateBalance (UpdateBalanceRequest) returns (AccountResponse);
     rpc ListAccounts (ListAccountsRequest) returns (ListAccountsResponse);
-    // rpc ReserveFunds(ReserveRequest) returns (ReserveResponse);
-    // rpc Transfer(TransferRequest) returns (TransferResponse);
+    rpc ReserveFunds(ReserveRequest) returns (ReserveResponse);
+    rpc Transfer(TransferRequest) returns (TransferResponse);
+    rpc ReleaseFunds(ReleaseRequest) returns (ReleaseResponse);
 }
 
 message CreateAccountRequest {
@@ -42,22 +43,32 @@ message ListAccountsResponse {
     repeated AccountResponse accounts = 1;
 }
 
-// message ReserveRequest {
-//   string account_id = 1;
-//   double amount = 2;
-//   string reference_id = 3;
-// }
+message ReserveRequest {
+  string payer_id = 1;
+  string payee_id = 2;
+  double amount = 3;
+  string reference_id = 4;
+}
 
-// message ReserveResponse {
-//   string status = 1;
-//   string message = 2;
-// }
+message ReserveResponse {
+  string status = 1;
+  string message = 2;
+}
 
-// message TransferRequest {
-//   string reference_id = 1;
-// }
+message TransferRequest {
+  string reference_id = 1;
+}
 
-// message TransferResponse {
-//   string status = 1;
-//   string message = 2;
-// }
+message TransferResponse {
+  string status = 1;
+  string message = 2;
+}
+
+message ReleaseRequest {
+  string reference_id = 1;
+}
+
+message ReleaseResponse {
+  string status = 1;
+  string message = 2;
+}

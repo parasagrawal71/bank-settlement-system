@@ -23,6 +23,9 @@ const (
 	AccountService_GetAccount_FullMethodName    = "/accounts.AccountService/GetAccount"
 	AccountService_UpdateBalance_FullMethodName = "/accounts.AccountService/UpdateBalance"
 	AccountService_ListAccounts_FullMethodName  = "/accounts.AccountService/ListAccounts"
+	AccountService_ReserveFunds_FullMethodName  = "/accounts.AccountService/ReserveFunds"
+	AccountService_Transfer_FullMethodName      = "/accounts.AccountService/Transfer"
+	AccountService_ReleaseFunds_FullMethodName  = "/accounts.AccountService/ReleaseFunds"
 )
 
 // AccountServiceClient is the client API for AccountService service.
@@ -33,6 +36,9 @@ type AccountServiceClient interface {
 	GetAccount(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*AccountResponse, error)
 	UpdateBalance(ctx context.Context, in *UpdateBalanceRequest, opts ...grpc.CallOption) (*AccountResponse, error)
 	ListAccounts(ctx context.Context, in *ListAccountsRequest, opts ...grpc.CallOption) (*ListAccountsResponse, error)
+	ReserveFunds(ctx context.Context, in *ReserveRequest, opts ...grpc.CallOption) (*ReserveResponse, error)
+	Transfer(ctx context.Context, in *TransferRequest, opts ...grpc.CallOption) (*TransferResponse, error)
+	ReleaseFunds(ctx context.Context, in *ReleaseRequest, opts ...grpc.CallOption) (*ReleaseResponse, error)
 }
 
 type accountServiceClient struct {
@@ -79,6 +85,33 @@ func (c *accountServiceClient) ListAccounts(ctx context.Context, in *ListAccount
 	return out, nil
 }
 
+func (c *accountServiceClient) ReserveFunds(ctx context.Context, in *ReserveRequest, opts ...grpc.CallOption) (*ReserveResponse, error) {
+	out := new(ReserveResponse)
+	err := c.cc.Invoke(ctx, AccountService_ReserveFunds_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) Transfer(ctx context.Context, in *TransferRequest, opts ...grpc.CallOption) (*TransferResponse, error) {
+	out := new(TransferResponse)
+	err := c.cc.Invoke(ctx, AccountService_Transfer_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) ReleaseFunds(ctx context.Context, in *ReleaseRequest, opts ...grpc.CallOption) (*ReleaseResponse, error) {
+	out := new(ReleaseResponse)
+	err := c.cc.Invoke(ctx, AccountService_ReleaseFunds_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AccountServiceServer is the server API for AccountService service.
 // All implementations must embed UnimplementedAccountServiceServer
 // for forward compatibility
@@ -87,6 +120,9 @@ type AccountServiceServer interface {
 	GetAccount(context.Context, *GetAccountRequest) (*AccountResponse, error)
 	UpdateBalance(context.Context, *UpdateBalanceRequest) (*AccountResponse, error)
 	ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error)
+	ReserveFunds(context.Context, *ReserveRequest) (*ReserveResponse, error)
+	Transfer(context.Context, *TransferRequest) (*TransferResponse, error)
+	ReleaseFunds(context.Context, *ReleaseRequest) (*ReleaseResponse, error)
 	mustEmbedUnimplementedAccountServiceServer()
 }
 
@@ -105,6 +141,15 @@ func (UnimplementedAccountServiceServer) UpdateBalance(context.Context, *UpdateB
 }
 func (UnimplementedAccountServiceServer) ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAccounts not implemented")
+}
+func (UnimplementedAccountServiceServer) ReserveFunds(context.Context, *ReserveRequest) (*ReserveResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReserveFunds not implemented")
+}
+func (UnimplementedAccountServiceServer) Transfer(context.Context, *TransferRequest) (*TransferResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Transfer not implemented")
+}
+func (UnimplementedAccountServiceServer) ReleaseFunds(context.Context, *ReleaseRequest) (*ReleaseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReleaseFunds not implemented")
 }
 func (UnimplementedAccountServiceServer) mustEmbedUnimplementedAccountServiceServer() {}
 
@@ -191,6 +236,60 @@ func _AccountService_ListAccounts_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AccountService_ReserveFunds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReserveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).ReserveFunds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_ReserveFunds_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).ReserveFunds(ctx, req.(*ReserveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_Transfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TransferRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).Transfer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_Transfer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).Transfer(ctx, req.(*TransferRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_ReleaseFunds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReleaseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).ReleaseFunds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_ReleaseFunds_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).ReleaseFunds(ctx, req.(*ReleaseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AccountService_ServiceDesc is the grpc.ServiceDesc for AccountService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -213,6 +312,18 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListAccounts",
 			Handler:    _AccountService_ListAccounts_Handler,
+		},
+		{
+			MethodName: "ReserveFunds",
+			Handler:    _AccountService_ReserveFunds_Handler,
+		},
+		{
+			MethodName: "Transfer",
+			Handler:    _AccountService_Transfer_Handler,
+		},
+		{
+			MethodName: "ReleaseFunds",
+			Handler:    _AccountService_ReleaseFunds_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
