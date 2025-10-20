@@ -2,6 +2,7 @@
 brew install grpcurl
 
 # Create account
+grpcurl -plaintext -d '{"name":"Paras Agrawal","account_no":"10023","initial_balance":2000.50}' localhost:50051 accounts.AccountService/CreateAccount
 grpcurl -plaintext -d '{"name":"Alice","account_no":"20012","initial_balance":1000}' localhost:50051 accounts.AccountService/CreateAccount
 
 # List accounts

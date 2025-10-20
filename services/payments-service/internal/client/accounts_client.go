@@ -28,12 +28,16 @@ func NewAccountsClient(addr string) *AccountsClient {
 	}
 }
 
-func (c *AccountsClient) GetAccount(ctx context.Context, id string) (*accountpb.AccountResponse, error) {
-	return c.Client.GetAccount(ctx, &accountpb.GetAccountRequest{AccountId: id})
+func (c *AccountsClient) ReserveFunds(ctx context.Context, reference_id string, payer_id string, payee_id string, amount float64) (*accountpb.ReserveResponse, error) {
+	return c.Client.ReserveFunds(ctx, &accountpb.ReserveRequest{ReferenceId: reference_id, PayerId: payer_id, PayeeId: payee_id, Amount: amount})
 }
 
-func (c *AccountsClient) UpdateBalance(ctx context.Context, id string, amount float64, is_credit bool) (*accountpb.AccountResponse, error) {
-	return c.Client.UpdateBalance(ctx, &accountpb.UpdateBalanceRequest{AccountId: id, Amount: amount, IsCredit: is_credit})
+func (c *AccountsClient) Transfer(ctx context.Context, reference_id string) (*accountpb.TransferResponse, error) {
+	return c.Client.Transfer(ctx, &accountpb.TransferRequest{ReferenceId: reference_id})
+}
+
+func (c *AccountsClient) ReleaseFunds(ctx context.Context, reference_id string) (*accountpb.ReleaseResponse, error) {
+	return c.Client.ReleaseFunds(ctx, &accountpb.ReleaseRequest{ReferenceId: reference_id})
 }
 
 func (c *AccountsClient) Close() {

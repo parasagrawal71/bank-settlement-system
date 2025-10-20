@@ -1,22 +1,26 @@
 syntax = "proto3";
-
 package accounts;
 option go_package = "./proto";
 
+
 service AccountService {
-  rpc GetAccount(GetAccountRequest) returns (AccountResponse);
-  rpc UpdateBalance(UpdateBalanceRequest) returns (AccountResponse);
+    rpc CreateAccount (CreateAccountRequest) returns (AccountResponse);
+    rpc GetAccount (GetAccountRequest) returns (AccountResponse);
+    rpc UpdateBalance (UpdateBalanceRequest) returns (AccountResponse);
+    rpc ListAccounts (ListAccountsRequest) returns (ListAccountsResponse);
+    rpc ReserveFunds(ReserveRequest) returns (ReserveResponse);
+    rpc Transfer(TransferRequest) returns (TransferResponse);
+    rpc ReleaseFunds(ReleaseRequest) returns (ReleaseResponse);
+}
+
+message CreateAccountRequest {
+    string name = 1;
+    string account_no = 2;
+    double initial_balance = 3;
 }
 
 message GetAccountRequest {
-  string account_id = 1;
-}
-
-message AccountResponse {
     string account_id = 1;
-    string name = 2;
-    string bank_id = 3;
-    double balance = 4;
 }
 
 message UpdateBalanceRequest {
@@ -25,4 +29,46 @@ message UpdateBalanceRequest {
     bool is_credit = 3;
 }
 
+message AccountResponse {
+    string account_id = 1;
+    string name = 2;
+    string account_no = 3;
+    double balance = 4;
+	double reserved = 5;
+}
 
+message ListAccountsRequest {}
+
+message ListAccountsResponse {
+    repeated AccountResponse accounts = 1;
+}
+
+message ReserveRequest {
+  string payer_id = 1;
+  string payee_id = 2;
+  double amount = 3;
+  string reference_id = 4;
+}
+
+message ReserveResponse {
+  string status = 1;
+  string message = 2;
+}
+
+message TransferRequest {
+  string reference_id = 1;
+}
+
+message TransferResponse {
+  string status = 1;
+  string message = 2;
+}
+
+message ReleaseRequest {
+  string reference_id = 1;
+}
+
+message ReleaseResponse {
+  string status = 1;
+  string message = 2;
+}

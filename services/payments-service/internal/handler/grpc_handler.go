@@ -2,6 +2,9 @@ package handler
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -19,6 +22,7 @@ type PaymentHandler struct {
 	repo           *repository.Repository
 	accountsClient pb.AccountServiceClient
 	outboxRepo     *repository.OutboxRepository
+	idempRepo      *repository.IdempotencyRepo
 }
 
 func NewPaymentHandler(pool *pgxpool.Pool) *PaymentHandler {
@@ -29,104 +33,119 @@ func NewPaymentHandler(pool *pgxpool.Pool) *PaymentHandler {
 	}
 
 	client := pb.NewAccountServiceClient(conn)
-	return &PaymentHandler{repo: repository.NewRepository(pool), accountsClient: client, outboxRepo: repository.NewOutboxRepository(pool)}
+	return &PaymentHandler{
+		repo:           repository.NewRepository(pool),
+		accountsClient: client,
+		outboxRepo:     repository.NewOutboxRepository(pool),
+		idempRepo:      repository.NewIdempotencyRepository(pool),
+	}
 }
 
-func (h *PaymentHandler) CreatePayment(ctx context.Context, req *pb.PaymentRequest) (*pb.PaymentResponse, error) {
+func genRef() string {
+	b := make([]byte, 8)
+	rand.Read(b)
+	return hex.EncodeToString(b)
+}
+
+func (h *PaymentHandler) CreatePaymentIntent(ctx context.Context, req *pb.CreatePaymentIntentRequest) (*pb.CreatePaymentIntentResponse, error) {
 	if req.PayerId == "" || req.PayeeId == "" || req.Amount <= 0 {
 		return nil, fmt.Errorf("payer_id, payee_id and amount required")
 	}
 
-	log.Printf("Processing payment of %.2f %s from %s → %s",
-		req.Amount, req.Currency, req.PayerId, req.PayeeId)
+	refID := req.ReferenceId
+	if refID == "" {
+		refID = genRef()
+	}
+	// idempotency check
+	if b, err := h.idempRepo.GetResponse(ctx, refID); err == nil && b != nil {
+		var resp pb.CreatePaymentIntentResponse
+		// best-effort: ignore unmarshal error
+		_ = json.Unmarshal(b, &resp)
+		return &resp, nil
+	}
 
-	payer, err := h.accountsClient.GetAccount(ctx, &pb.GetAccountRequest{AccountId: req.PayerId})
+	log.Printf("Processing payment intent of %.2f from %s → %s",
+		req.Amount, req.PayerId, req.PayeeId)
+
+	// Reserve funds in accounts-service
+	_, err := h.accountsClient.ReserveFunds(ctx, &pb.ReserveRequest{PayerId: req.PayerId, PayeeId: req.PayeeId, Amount: req.Amount, ReferenceId: refID})
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch payer: %v", err)
+		return &pb.CreatePaymentIntentResponse{ReferenceId: refID, Status: pb.PaymentStatus_FAILED, Message: err.Error()}, nil
 	}
-	log.Printf("Found payer: %s (%.2f)", payer.Name, payer.Balance)
 
-	payee, err := h.accountsClient.GetAccount(ctx, &pb.GetAccountRequest{AccountId: req.PayeeId})
+	// insert payment_intent
+	if err := h.repo.CreateIntent(ctx, refID, req.PayerId, req.PayeeId, req.Amount); err != nil {
+		return nil, err
+	}
+
+	resp := pb.CreatePaymentIntentResponse{ReferenceId: refID, Status: pb.PaymentStatus_AUTHORIZED, Message: "Authorised"}
+	// store idempotency response
+	if jb, err := json.Marshal(resp); err == nil {
+		_ = h.idempRepo.SaveResponse(ctx, refID, jb)
+	}
+	return &resp, nil
+}
+
+func (h *PaymentHandler) CapturePayment(ctx context.Context, req *pb.CapturePaymentRequest) (*pb.CapturePaymentResponse, error) {
+	refID := req.ReferenceId
+
+	// Check intent exists and check its status
+	paymentIntent, err := h.repo.GetIntent(ctx, refID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch payee: %v", err)
+		return nil, err
 	}
-	log.Printf("Found payee: %s (%.2f)", payee.Name, payee.Balance)
-
-	if payer.Balance < 0 || payer.Balance < req.Amount {
-		return &pb.PaymentResponse{
-			Status:  "FAILED",
-			Message: "Insufficient funds",
-		}, nil
+	if paymentIntent == nil {
+		return &pb.CapturePaymentResponse{ReferenceId: refID, Status: pb.PaymentStatus_FAILED, Message: "intent does not exist"}, nil
+	}
+	if paymentIntent.Status != "AUTHORIZED" {
+		return &pb.CapturePaymentResponse{ReferenceId: refID, Status: pb.PaymentStatus_FAILED, Message: "intent not authorized"}, nil
 	}
 
+	// Call Transfer funds
+	_, err = h.accountsClient.Transfer(ctx, &pb.TransferRequest{ReferenceId: refID})
+	if err != nil {
+		return &pb.CapturePaymentResponse{ReferenceId: refID, Status: pb.PaymentStatus_FAILED, Message: err.Error()}, nil
+	}
+
+	// Now insert payment transactions
 	tx, err := h.repo.BeginTx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	refID := fmt.Sprintf("REF-%d", time.Now().UnixNano())
-
-	// Step 1: Debit payer
-	_, err = h.accountsClient.UpdateBalance(ctx, &pb.UpdateBalanceRequest{
-		AccountId: req.PayerId,
-		Amount:    req.Amount,
-		IsCredit:  false,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("debit payer: %w", err)
+	if err := h.repo.InsertPaymentTx(ctx, tx, refID, paymentIntent.PayerID, "DEBIT", paymentIntent.Amount); err != nil {
+		return nil, err
 	}
-
-	if err := h.repo.InsertTransaction(ctx, tx, req.PayerId, req.Currency, "DEBIT", refID, req.Amount); err != nil {
-		return nil, fmt.Errorf("insert debit: %w", err)
-	}
-
-	// Step 2: Credit payee
-	_, err = h.accountsClient.UpdateBalance(ctx, &pb.UpdateBalanceRequest{
-		AccountId: req.PayeeId,
-		Amount:    req.Amount,
-		IsCredit:  true,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("credit payee: %w", err)
-	}
-
-	if err := h.repo.InsertTransaction(ctx, tx, req.PayeeId, req.Currency, "CREDIT", refID, req.Amount); err != nil {
-		return nil, fmt.Errorf("insert credit: %w", err)
+	if err := h.repo.InsertPaymentTx(ctx, tx, refID, paymentIntent.PayeeID, "CREDIT", paymentIntent.Amount); err != nil {
+		return nil, err
 	}
 
 	now := time.Now().Unix()
-	debitEv := events.PaymentEvent{
+	paymentEvent := events.PaymentEvent{
 		ReferenceID: refID,
-		AccountID:   req.PayerId,
-		Amount:      req.Amount,
-		Currency:    req.Currency,
-		TxnType:     "DEBIT",
-		Timestamp:   now,
-	}
-	creditEv := events.PaymentEvent{
-		ReferenceID: refID,
-		AccountID:   req.PayeeId,
-		Amount:      req.Amount,
-		Currency:    req.Currency,
-		TxnType:     "CREDIT",
+		PayerId:     paymentIntent.PayerID,
+		PayeeId:     paymentIntent.PayeeID,
+		Amount:      paymentIntent.Amount,
 		Timestamp:   now,
 	}
 
-	if err := h.outboxRepo.AddEvent(ctx, tx, "DEBIT_PAYMENT", debitEv); err != nil {
-		return nil, fmt.Errorf("store debit outbox: %w", err)
+	if err := h.outboxRepo.AddEvent(ctx, tx, "PAYMENT_CAPTURED", paymentEvent); err != nil {
+		return nil, fmt.Errorf("store payment event in outbox: %w", err)
 	}
-	if err := h.outboxRepo.AddEvent(ctx, tx, "CREDIT_PAYMENT", creditEv); err != nil {
-		return nil, fmt.Errorf("store credit outbox: %w", err)
+
+	// Update intent status
+	if err := h.repo.UpdateIntentStatusTx(ctx, tx, refID, "CAPTURED"); err != nil {
+		return nil, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("commit tx: %w", err)
 	}
 
-	return &pb.PaymentResponse{
-		ReferenceId: refID,
-		Status:      "SUCCESS",
-		Message:     "Payment processed successfully",
-	}, nil
+	resp := pb.CapturePaymentResponse{ReferenceId: refID, Status: pb.PaymentStatus_CAPTURED, Message: "Payment processed successfully"}
+	if jb, err := json.Marshal(resp); err == nil {
+		_ = h.idempRepo.SaveResponse(ctx, refID, jb)
+	}
+	return &resp, nil
 }

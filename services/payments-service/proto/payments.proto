@@ -5,24 +5,38 @@ package payments;
 option go_package = "./proto";
 
 service PaymentService {
-  rpc CreatePayment (PaymentRequest) returns (PaymentResponse);
+  rpc CreatePaymentIntent(CreatePaymentIntentRequest) returns (CreatePaymentIntentResponse);
+  rpc CapturePayment(CapturePaymentRequest) returns (CapturePaymentResponse);
 }
 
-enum TransactionType {
-  DEBIT = 0;
-  CREDIT = 1;
+enum PaymentStatus { 
+  UNKNOWN = 0; 
+  AUTHORIZED = 1; 
+  CAPTURED = 2; 
+  FAILED = 3; 
+  REFUNDED = 4; 
 }
 
-message PaymentRequest {
+message CreatePaymentIntentRequest {
   string payer_id = 1;
   string payee_id = 2;
   double amount = 3;
-  string currency = 4;
+  string reference_id = 5;
 }
 
-message PaymentResponse {
+message CreatePaymentIntentResponse {
   string reference_id = 1;
-  string status = 2;
+  PaymentStatus status = 2;
+  string message = 3;
+}
+
+message CapturePaymentRequest {
+  string reference_id = 1;
+}
+
+message CapturePaymentResponse {
+  string reference_id = 1;
+  PaymentStatus status = 2;
   string message = 3;
 }
 

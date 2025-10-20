@@ -141,10 +141,17 @@ func (r *Repository) ReserveFunds(ctx context.Context, referenceID string, payer
 	}
 	defer tx.Rollback(ctx)
 
+	// check payee account exists
+	var payee_id string
+	err = tx.QueryRow(ctx, "SELECT id FROM accounts WHERE id=$1", payeeID).Scan(&payee_id)
+	if err != nil {
+		return fmt.Errorf("payee account not found: %w", err)
+	}
+
 	var balance, reserved float64
 	err = tx.QueryRow(ctx, "SELECT balance, reserved FROM accounts WHERE id=$1", payerID).Scan(&balance, &reserved)
 	if err != nil {
-		return fmt.Errorf("account not found: %w", err)
+		return fmt.Errorf("payer account not found: %w", err)
 	}
 
 	if balance < amount {

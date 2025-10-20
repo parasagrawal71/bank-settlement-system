@@ -1,0 +1,10 @@
+# Install grpcurl
+brew install grpcurl
+
+# Create Payment Intent
+grpcurl -plaintext -d '{"payer_id":"","payee_id":"","amount":100}' localhost:50052 payments.PaymentService/CreatePaymentIntent
+For example,
+grpcurl -plaintext -d '{"payer_id":"8802ba96-4a02-472d-8202-62ab7b411317","payee_id":"1be0bf4a-1789-4821-b3c3-3f0fe57f9769","amount":100}' localhost:50052 payments.PaymentService/CreatePaymentIntent
+
+# Capture Payment
+grpcurl -plaintext -d '{"reference_id": ""}' localhost:50052 payments.PaymentService/CapturePayment

@@ -17,12 +17,10 @@ type Producer struct {
 
 type PaymentEvent struct {
 	ReferenceID string  `json:"reference_id"`
-	AccountID   string  `json:"account_id"`
+	PayeeId     string  `json:"payer_id"`
+	PayerId     string  `json:"payee_id"`
 	Amount      float64 `json:"amount"`
-	Currency    string  `json:"currency"`
-	TxnType     string  `json:"txn_type"` // DEBIT or CREDIT
 	Timestamp   int64   `json:"timestamp"`
-	// optional: correlation ids, source, environment
 }
 
 func NewProducer(brokers []string, topic string) *Producer {
